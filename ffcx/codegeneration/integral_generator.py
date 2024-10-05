@@ -232,7 +232,7 @@ class IntegralGenerator:
         parts = []
         tables = self.ir.expression.unique_tables
         table_types = self.ir.expression.unique_table_types
-        if self.ir.expression.integral_type in ufl.custom_integral_types:
+        if self.ir.expression.integral_type == "custom":
             # Define only piecewise tables
             table_names = [name for name in sorted(tables) if table_types[name] in piecewise_ttypes]
         else:
@@ -291,6 +291,9 @@ class IntegralGenerator:
 
         iq_symbol = self.backend.symbols.quadrature_loop_index
         iq = create_quadrature_index(quadrature_rule, iq_symbol)
+
+        if(quadrature_rule.is_runtime):
+            iq.sizes[0] = self.backend.symbols.runtime_num_points
 
         code = definitions + intermediates + tensor_comp
         code = optimize(code, quadrature_rule)
@@ -476,9 +479,11 @@ class IntegralGenerator:
             f = self.get_var(quadrature_rule, v)
 
             # Quadrature weight was removed in representation, add it back now
-            if self.ir.expression.integral_type in ufl.custom_integral_types:
+            if self.ir.expression.integral_type in ("custom"):
                 weights = self.backend.symbols.custom_weights_table
                 weight = weights[iq.global_index]
+            elif self.ir.expression.integral_type in ("cutcell", "interface"):
+                weight = self.backend.symbols.runtime_weights
             else:
                 weights = self.backend.symbols.weights_table(quadrature_rule)
                 weight = weights[iq.global_index]

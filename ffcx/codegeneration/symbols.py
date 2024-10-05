@@ -95,6 +95,13 @@ class FFCXBackendSymbols:
         # Table for chunk of custom quadrature points (physical coordinates).
         self.custom_points_table = L.Symbol("points_chunk", dtype=L.DataType.REAL)
 
+        # Runtime quadrature weights (including cell measure scaling).
+        self.runtime_weights = L.Symbol("weights", dtype=L.DataType.REAL)
+        # Runtime quadrature points (physical coordinates).
+        self.runtime_points = L.Symbol("points", dtype=L.DataType.REAL)
+        # Number of points in runtime quadrature rule
+        self.runtime_num_points = L.Symbol("num_points[0]", dtype=L.DataType.INT)
+
     def entity(self, entity_type, restriction):
         """Entity index for lookup in element tables."""
         if entity_type == "cell":

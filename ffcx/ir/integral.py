@@ -20,7 +20,7 @@ from ffcx.ir.analysis.factorization import compute_argument_factorization
 from ffcx.ir.analysis.graph import build_scalar_graph
 from ffcx.ir.analysis.modified_terminals import analyse_modified_terminal, is_modified_terminal
 from ffcx.ir.analysis.visualise import visualise_graph
-from ffcx.ir.elementtables import UniqueTableReferenceT, build_optimized_tables
+from ffcx.ir.elementtables import UniqueTableReferenceT, build_optimized_tables, extract_finite_element_data
 
 logger = logging.getLogger("ffcx")
 
@@ -55,7 +55,6 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
     # Shared unique tables for all quadrature loops
     ir["unique_tables"] = {}
     ir["unique_table_types"] = {}
-
     ir["integrand"] = {}
 
     for quadrature_rule, integrand in integrands.items():
@@ -276,7 +275,12 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
                 active_tables[name] = tables[name]
                 active_table_types[name] = table_types[name]
 
-        # Add tables and types for this quadrature rule to global tables dict
+        finite_element_data, table_element_data = extract_finite_element_data(F, active_tables)
+        ir["finite_elements"] = finite_element_data
+        ir["table_element_reference"] = table_element_data
+
+        print(finite_element_data, table_element_data)
+
         ir["unique_tables"].update(active_tables)
         ir["unique_table_types"].update(active_table_types)
         # Build IR dict for the given expressions
@@ -306,6 +310,7 @@ def analyse_dependencies(F, mt_unique_table_reference):
     """
     # Set targets, and dependencies to 'active'
     targets = [i for i, v in F.nodes.items() if v.get("target")]
+
     for _, v in F.nodes.items():
         v["status"] = "inactive"
 
@@ -333,7 +338,8 @@ def analyse_dependencies(F, mt_unique_table_reference):
                     raise RuntimeError(f"Invalid ttype {ttype}.")
 
         elif not is_cellwise_constant(v["expression"]):
-            raise RuntimeError("Error " + str(tr))
+            if(tr is not None):
+              raise RuntimeError("Error " + str(tr))
             # Keeping this check to be on the safe side,
             # not sure which cases this will cover (if any)
             # varying_indices.append(i)

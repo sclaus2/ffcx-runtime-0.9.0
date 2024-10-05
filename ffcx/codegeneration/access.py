@@ -118,7 +118,7 @@ class FFCXBackendAccess:
         if mt.averaged is not None:
             raise RuntimeError("Not expecting average of SpatialCoordinates.")
 
-        if self.integral_type in ufl.custom_integral_types:
+        if self.integral_type in ("custom"):
             if mt.local_derivatives:
                 raise RuntimeError("FIXME: Jacobian in custom integrals is not implemented.")
 
@@ -177,7 +177,7 @@ class FFCXBackendAccess:
         if mt.restriction:
             raise RuntimeError("Not expecting restriction of FacetCoordinate.")
 
-        if self.integral_type in ("interior_facet", "exterior_facet"):
+        if self.integral_type in ("interior_facet", "exterior_facet", "interface"):
             (tdim,) = mt.terminal.ufl_shape
             if tdim == 0:
                 raise RuntimeError("Vertices have no facet coordinates.")

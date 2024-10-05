@@ -166,8 +166,6 @@ def _analyze_form(
     """
     if form.empty():
         raise RuntimeError(f"Form ({form}) seems to be zero: cannot compile it.")
-    if _has_custom_integrals(form):
-        raise RuntimeError(f"Form ({form}) contains unsupported custom integrals.")
 
     # Check that coordinate element is based on basix.ufl._ElementBase
     for i in form._integrals:

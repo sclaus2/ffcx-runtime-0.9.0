@@ -43,12 +43,15 @@ extern "C"
 #endif // __cplusplus
 
   // <HEADER_DECL>
+  typedef struct basix_element basix_element;
 
   typedef enum
   {
     cell = 0,
     exterior_facet = 1,
-    interior_facet = 2
+    interior_facet = 2,
+    cutcell = 3,
+    interface = 4,
   } ufcx_integral_type;
 
   // </HEADER_DECL>
@@ -125,6 +128,60 @@ extern "C"
       const uint8_t* restrict quadrature_permutation);
 #endif // __STDC_NO_COMPLEX__
 
+  /// @brief  Tabulate tensor for integrals with quadrature rule given at run-time
+  typedef void(ufcx_tabulate_tensor_runtime_quad_float32)(
+      float* restrict A, const float* restrict w,
+      const float* restrict c, const float* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const basix_element* elements,
+      const int* restrict num_points,
+      const float* restrict points,
+      const float* restrict weights);
+
+  typedef void(ufcx_tabulate_tensor_runtime_quad_float64)(
+      double* restrict A, const double* restrict w,
+      const double* restrict c, const double* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const basix_element* elements,
+      const int* restrict num_points,
+      const double* restrict points,
+      const double* restrict weights);
+
+#ifndef __STDC_NO_COMPLEX__
+  /// Tabulate integral into tensor A with compiled
+  /// quadrature rule and complex single precision
+  ///
+  /// @see ufcx_tabulate_tensor_single
+  typedef void(ufcx_tabulate_tensor_runtime_quad_complex64)(
+      float _Complex* restrict A, const float _Complex* restrict w,
+      const float _Complex* restrict c, const float* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const basix_element* elements,
+      const int* restrict num_points,
+      const float* restrict points,
+      const float* restrict weights);
+#endif // __STDC_NO_COMPLEX__
+
+#ifndef __STDC_NO_COMPLEX__
+  /// Tabulate integral into tensor A with compiled
+  /// quadrature rule and complex double precision
+  ///
+  /// @see ufcx_tabulate_tensor_single
+  typedef void(ufcx_tabulate_tensor_runtime_quad_complex128)(
+      double _Complex* restrict A, const double _Complex* restrict w,
+      const double _Complex* restrict c, const double* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const basix_element* elements,
+      const int* restrict num_points,
+      const double* restrict points,
+      const double* restrict weights);
+#endif // __STDC_NO_COMPLEX__
+
+
   typedef struct ufcx_integral
   {
     const bool* enabled_coefficients;
@@ -138,6 +195,9 @@ extern "C"
 
     /// Get the hash of the coordinate element associated with the geometry of the mesh.
     uint64_t coordinate_element_hash;
+
+    /// Get the hash of finite elements used in integrals with runtime quadrature
+    uint64_t* finite_element_hashes;
   } ufcx_integral;
 
   typedef struct ufcx_expression

@@ -337,7 +337,7 @@ class Symbol(LExprTerminal):
     def __init__(self, name: str, dtype):
         """Initialise."""
         assert isinstance(name, str)
-        assert name.replace("_", "").isalnum()
+
         self.name = name
         self.dtype = dtype
 

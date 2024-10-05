@@ -26,7 +26,7 @@ logger = logging.getLogger("ffcx")
 default_rtol = 1e-6
 default_atol = 1e-9
 
-piecewise_ttypes = ("piecewise", "fixed", "ones", "zeros")
+piecewise_ttypes = ("", "fixed", "ones", "zeros")
 uniform_ttypes = ("fixed", "ones", "zeros", "uniform")
 
 
@@ -54,6 +54,11 @@ class UniqueTableReferenceT(typing.NamedTuple):
     tensor_factors: list[typing.Any]
     tensor_permutation: np.typing.NDArray[np.int32]
 
+class RuntimeTableData(typing.NamedTuple):
+    name: str
+    component_element_hash: np.int64
+    deriv_order: np.int32
+    basix_index: np.int32
 
 def equal_tables(a, b, rtol=default_rtol, atol=default_atol):
     """Check if two tables are equal."""
@@ -94,10 +99,14 @@ def get_ffcx_table_values(
     """
     deriv_order = sum(derivative_counts)
 
-    if integral_type in ufl.custom_integral_types:
+    if integral_type in ("custom", "cutcell"):
         # Use quadrature points on cell for analysis in custom integral types
         integral_type = "cell"
         assert not avg
+
+    if integral_type in ("interface"):
+        # Use quadrature points on cell for analysis in custom integral types
+        integral_type = "interior_facet"
 
     if integral_type == "expression":
         # FFCx tables for expression are generated as either interior cell points
@@ -547,7 +556,6 @@ def build_optimized_tables(
 
     return mt_tables
 
-
 def is_zeros_table(table, rtol=default_rtol, atol=default_atol):
     """Check if table values are all zero."""
     return np.prod(table.shape) == 0 or np.allclose(
@@ -622,3 +630,82 @@ def analyse_table_type(table, rtol=default_rtol, atol=default_atol):
             # Varying over points and entities
             ttype = "varying"
     return ttype
+
+def extract_finite_element_data(F, active_tables):
+    table_element_reference = []
+
+    # transverse graph and collect information about
+    # elements for each active table, i.e.
+    # element hash and info about derivatives
+    for i, v in F.nodes.items():
+      tr = v.get("tr")
+      if tr is not None and F.nodes[i]["status"] != "inactive":
+          #look up if table reference is in active table names
+          if tr.name in active_tables:
+              mt = v.get("mt")
+              res = get_modified_terminal_element(mt)
+              element, avg, local_derivatives, flat_component = res
+
+              deriv_order = sum(local_derivatives)
+              basix_idx = basix_index(local_derivatives)
+
+              if element.basix_hash() is None: #not basix element get component
+                #extract component
+                element, offset, stride = element.get_component_element(flat_component)
+
+              table_element_reference.append(RuntimeTableData(tr.name,element.basix_hash(),deriv_order,basix_idx))
+
+    ###########################################################################
+    # From table element reference data collect all necessary information     #
+    # about which element components are used in integral and derivative order#
+    # this is to call basix tabulate for all elements                         #
+    ###########################################################################
+
+    #build list of elements
+    finite_element_hashes = []
+
+    for rt_data in table_element_reference:
+        element_hash = rt_data.component_element_hash
+        if element_hash not in finite_element_hashes:
+            finite_element_hashes.append(element_hash)
+
+    # build local numbering of finite elements
+    finite_element_ids = {}
+    id = 0
+
+    for el in finite_element_hashes:
+        finite_element_ids[el] = id
+        id = id + 1
+
+    #build map from finite element hash to maximum derivative order
+    finite_element_deriv_order = {}
+
+    #initialise entries with default of no derivatives
+    for el in finite_element_hashes:
+        finite_element_deriv_order[el] = 0
+
+    #now determine the highest order of derivative used in tables
+    for rt_data in table_element_reference:
+        element_hash = rt_data.component_element_hash
+        if finite_element_deriv_order[element_hash] < rt_data.deriv_order:
+            finite_element_deriv_order[element_hash] = rt_data.deriv_order
+
+    #Concanate information
+    finite_element_data = {}
+    for el in finite_element_hashes:
+        finite_element_data[el] = (finite_element_ids[el],finite_element_deriv_order[el])
+
+    ###########################################################################
+    # Now from these element information create the reference between         #
+    # element table names and the element hashes as well as the basix index   #
+    # this is to copy and paste the right values from the tabulate call into  #
+    # table variables                                                         #
+    ###########################################################################
+
+    table_element_data = {}
+
+    for rt_data in table_element_reference:
+        el = rt_data.component_element_hash
+        table_element_data[rt_data.name] = (finite_element_ids[el], rt_data.basix_index)
+
+    return finite_element_data, table_element_data

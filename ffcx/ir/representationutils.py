@@ -27,6 +27,9 @@ class QuadratureRule:
         self.tensor_factors = tensor_factors
         self.has_tensor_factors = tensor_factors is not None
         self._hash = None
+        # flag to identify runtime integrals as in this case
+        # points and weights are not needed at compile time
+        self.is_runtime = False
 
     def __hash__(self):
         """Hash."""
@@ -97,7 +100,11 @@ def integral_type_to_entity_dim(integral_type, tdim):
         entity_dim = tdim - 1
     elif integral_type in ufl.measure.point_integral_types:
         entity_dim = 0
-    elif integral_type in ufl.custom_integral_types:
+    elif integral_type == "custom":
+        entity_dim = tdim
+    elif integral_type == "cutcell":
+        entity_dim = tdim
+    elif integral_type == "interface":
         entity_dim = tdim
     elif integral_type == "expression":
         entity_dim = tdim

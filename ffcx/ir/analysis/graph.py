@@ -20,7 +20,7 @@ logger = logging.getLogger("ffcx")
 class ExpressionGraph:
     """A directed multi-edge graph.
 
-    ExpressionGraph allows multiple edges between the same nodes,
+    h allows multiple edges between the same nodes,
     and respects the insertion order of nodes and edges.
     """
 
