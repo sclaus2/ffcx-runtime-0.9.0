@@ -308,6 +308,7 @@ class ExpressionGenerator:
             else:
                 arg_factor = table[indices[i + 1]]
             arg_factors.append(arg_factor)
+
         return arg_factors
 
     def new_temp_symbol(self, basename):

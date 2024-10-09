@@ -283,6 +283,10 @@ class CFormatter:
         """Format a literal int."""
         return f"{val.value}"
 
+    def format_literal_string(self, c) -> str:
+        """Format a literal int."""
+        return c.code_str
+
     def format_for_range(self, r) -> str:
         """Format a for loop over a range."""
         begin = self.c_format(r.begin)
@@ -372,6 +376,7 @@ class CFormatter:
         "Not": format_unary_op,
         "LiteralFloat": format_literal_float,
         "LiteralInt": format_literal_int,
+        "LiteralString": format_literal_string,
         "Symbol": format_symbol,
         "Conditional": format_conditional,
         "MathFunction": format_math_function,

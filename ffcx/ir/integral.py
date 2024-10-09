@@ -185,6 +185,15 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
         if visualise:
             visualise_graph(F, "F.pdf")
 
+        # build list of active finite elements in integral
+        # and correct local finite element numbering in F.nodes[i]["tr"] accordingly
+        finite_element_data, table_element_reference = extract_finite_element_data(F)
+        ir["finite_elements"] = finite_element_data
+        ir["table_element_reference"] = table_element_reference
+
+        print("finite elements=", finite_elements)
+        print("table_element_reference", table_element_reference)
+
         # Loop over factorization terms
         block_contributions = collections.defaultdict(list)
         for ma_indices, fi_ci in sorted(argument_factorization.items()):
@@ -274,12 +283,6 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
             if table_types[name] not in ("zeros", "ones"):
                 active_tables[name] = tables[name]
                 active_table_types[name] = table_types[name]
-
-        finite_element_data, table_element_data = extract_finite_element_data(F, active_tables)
-        ir["finite_elements"] = finite_element_data
-        ir["table_element_reference"] = table_element_data
-
-        print(finite_element_data, table_element_data)
 
         ir["unique_tables"].update(active_tables)
         ir["unique_table_types"].update(active_table_types)

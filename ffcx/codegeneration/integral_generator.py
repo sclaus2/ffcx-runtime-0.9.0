@@ -235,6 +235,20 @@ class IntegralGenerator:
         if self.ir.expression.integral_type == "custom":
             # Define only piecewise tables
             table_names = [name for name in sorted(tables) if table_types[name] in piecewise_ttypes]
+        elif self.ir.expression.integral_type in ("cutcell", "interface"):
+            #register table names as symbols but do not return code
+            for hash, data in self.ir.expression.finite_elements.items():
+                name = "FE" + str(data[0])
+                table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
+                self.backend.symbols.element_tables[name] = table_symbol
+
+            #todo: remove this once codegen has improved
+            table_names = sorted(tables)
+            for name in table_names:
+              table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
+              self.backend.symbols.element_tables[name] = table_symbol
+
+            return parts
         else:
             # Define all tables
             table_names = sorted(tables)
@@ -417,6 +431,9 @@ class IntegralGenerator:
 
             if td.ttype == "ones":
                 arg_factor = 1
+            elif quadrature_rule.is_runtime:
+                arg_factor, arg_tables = self.backend.access.runtime_table_access(
+                    td, iq, indices[i])
             else:
                 # Assuming B sparsity follows element table sparsity
                 arg_factor, arg_tables = self.backend.access.table_access(
@@ -483,7 +500,8 @@ class IntegralGenerator:
                 weights = self.backend.symbols.custom_weights_table
                 weight = weights[iq.global_index]
             elif self.ir.expression.integral_type in ("cutcell", "interface"):
-                weight = self.backend.symbols.runtime_weights
+                weights = self.backend.symbols.runtime_weights
+                weight = weights[iq.global_index]
             else:
                 weights = self.backend.symbols.weights_table(quadrature_rule)
                 weight = weights[iq.global_index]
@@ -516,6 +534,7 @@ class IntegralGenerator:
             arg_factors, table = self.get_arg_factors(
                 blockdata, block_rank, quadrature_rule, iq, B_indices
             )
+
             tables += table
 
             # Define B_rhs = fw * arg_factors

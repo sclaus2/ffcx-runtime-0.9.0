@@ -53,9 +53,21 @@ class UniqueTableReferenceT(typing.NamedTuple):
     has_tensor_factorisation: bool
     tensor_factors: list[typing.Any]
     tensor_permutation: np.typing.NDArray[np.int32]
+    basix_index: int
+    element_hash: int
+    local_element_id: int
+
+    @property
+    def local_element_id(self):
+        return self.local_element_id
+
+    @local_element_id.setter
+    def local_element_id(self, value):
+        self.local_element_id = value
 
 class RuntimeTableData(typing.NamedTuple):
     name: str
+    component_element: basix.ufl._BasixElement
     component_element_hash: np.int64
     deriv_order: np.int32
     basix_index: np.int32
@@ -524,6 +536,9 @@ def build_optimized_tables(
                         False,
                         None,
                         None,
+                        None,
+                        None,
+                        None,
                     )
                     all_tensor_factors.append(ut)
                     tensor_factors.append(ut)
@@ -539,6 +554,14 @@ def build_optimized_tables(
         offset = cell_offset + t["offset"]
         block_size = t["stride"]
 
+        basix_idx = basix_index(local_derivatives)
+        hash = element.basix_hash()  #not basix element get component
+
+        if hash is None: #not basix element get component
+                #extract component
+                component_element, offset, stride = element.get_component_element(flat_component)
+                hash = component_element.basix_hash()
+
         # tables is just np.arrays, mt_tables hold metadata too
         mt_tables[mt] = UniqueTableReferenceT(
             name,
@@ -552,6 +575,9 @@ def build_optimized_tables(
             tensor_factors is not None,
             tensor_factors,
             tensor_perm,
+            basix_idx,
+            hash,
+            element_number
         )
 
     return mt_tables
@@ -631,7 +657,7 @@ def analyse_table_type(table, rtol=default_rtol, atol=default_atol):
             ttype = "varying"
     return ttype
 
-def extract_finite_element_data(F, active_tables):
+def extract_finite_element_data(F):
     table_element_reference = []
 
     # transverse graph and collect information about
@@ -640,20 +666,21 @@ def extract_finite_element_data(F, active_tables):
     for i, v in F.nodes.items():
       tr = v.get("tr")
       if tr is not None and F.nodes[i]["status"] != "inactive":
-          #look up if table reference is in active table names
-          if tr.name in active_tables:
-              mt = v.get("mt")
-              res = get_modified_terminal_element(mt)
-              element, avg, local_derivatives, flat_component = res
+        #look up if table reference is in active table names
+        mt = v.get("mt")
+        res = get_modified_terminal_element(mt)
+        element, avg, local_derivatives, flat_component = res
 
-              deriv_order = sum(local_derivatives)
-              basix_idx = basix_index(local_derivatives)
+        deriv_order = sum(local_derivatives)
+        basix_idx = basix_index(local_derivatives)
 
-              if element.basix_hash() is None: #not basix element get component
-                #extract component
-                element, offset, stride = element.get_component_element(flat_component)
+        if element.basix_hash() is None: #not basix element get component
+          #extract component
+          element, offset, stride = element.get_component_element(flat_component)
 
-              table_element_reference.append(RuntimeTableData(tr.name,element.basix_hash(),deriv_order,basix_idx))
+        table_element_reference.append(RuntimeTableData(tr.name,element,element.basix_hash(),deriv_order,basix_idx))
+
+    print("table element ref=", table_element_reference)
 
     ###########################################################################
     # From table element reference data collect all necessary information     #
@@ -690,10 +717,34 @@ def extract_finite_element_data(F, active_tables):
         if finite_element_deriv_order[element_hash] < rt_data.deriv_order:
             finite_element_deriv_order[element_hash] = rt_data.deriv_order
 
+    hash_to_element = {}
+
+    for rt_data in table_element_reference:
+        element = rt_data.component_element
+        element_hash = rt_data.component_element_hash
+        hash_to_element[element_hash] = element
+
+    print("hash to element", hash_to_element)
+
+    for el in finite_element_hashes:
+        hash_to_element[el].tabulate()
+
+
     #Concanate information
     finite_element_data = {}
     for el in finite_element_hashes:
         finite_element_data[el] = (finite_element_ids[el],finite_element_deriv_order[el])
+
+    ###########################################################################
+    # Update numbering in tables                                              #
+    ###########################################################################
+
+    for i, v in F.nodes.items():
+      tr = v.get("tr")
+      if tr is not None and F.nodes[i]["status"] != "inactive":
+        #check if element id has changed since creation of tr
+        if tr.local_element_id != finite_element_ids[tr.element_hash]:
+          F.nodes[i]["tr"] = tr._replace(local_element_id = finite_element_ids[tr.element_hash])
 
     ###########################################################################
     # Now from these element information create the reference between         #
@@ -701,7 +752,6 @@ def extract_finite_element_data(F, active_tables):
     # this is to copy and paste the right values from the tabulate call into  #
     # table variables                                                         #
     ###########################################################################
-
     table_element_data = {}
 
     for rt_data in table_element_reference:

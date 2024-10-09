@@ -921,6 +921,18 @@ class Comment(Statement):
         """Check equality."""
         return isinstance(other, type(self)) and self.comment == other.comment
 
+class LiteralString(Statement):
+    """Code in string."""
+
+    def __init__(self, code_str):
+        """Initialise."""
+        assert isinstance(code_str, str)
+        self.code_str = code_str
+
+    def __eq__(self, other):
+        """Check equality."""
+        return isinstance(other, type(self)) and self.code_str == other.code_str
+
 
 def commented_code_list(code, comments):
     """Add comment to code list if the list is not empty."""

@@ -448,3 +448,44 @@ class FFCXBackendAccess:
                 symbols += [L.Symbol(factor.name, dtype=L.DataType.REAL)]
                 FE.append(table)
             return L.Product(FE), symbols
+
+    def runtime_table_access(
+        self,
+        tabledata: UniqueTableReferenceT,
+        quadrature_index: L.MultiIndex,
+        dof_index: L.MultiIndex,
+    ):
+        """Access element table for given entity, quadrature point, and dof index.
+
+        Args:
+            tabledata: Table data object
+            entity_type: Entity type ("cell", "facet", "vertex")
+            restriction: Restriction ("+", "-")
+            quadrature_index: Quadrature index
+            dof_index: Dof index
+        """
+        iq_global_index = quadrature_index.global_index
+        ic_global_index = dof_index.global_index
+
+        symbols = []
+
+        if dof_index.dim == 1 and quadrature_index.dim == 1:
+            name = "FE"+ str(tabledata.local_element_id)
+            basix_idx = L.LiteralInt(tabledata.basix_index)
+            component = L.LiteralInt(0)
+            symbols += [L.Symbol(name, dtype=L.DataType.REAL)]
+            return self.symbols.element_tables[name][basix_idx][iq_global_index][ic_global_index][component], symbols
+        else:
+            FE = []
+            for i in range(dof_index.dim):
+                factor = tabledata.tensor_factors[i]
+                name = "FE"+ str(tabledata.local_element_id)
+                basix_idx = L.LiteralInt(tabledata.basix_index)
+                component = L.LiteralInt(0)
+                iq_i = quadrature_index.local_index(i)
+                ic_i = dof_index.local_index(i)
+                table = self.symbols.element_tables[name][basix_idx][iq_i][ic_i][component]
+                symbols += [L.Symbol(name, dtype=L.DataType.REAL)]
+                FE.append(table)
+            return L.Product(FE), symbols
+
