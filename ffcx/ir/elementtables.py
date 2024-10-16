@@ -53,6 +53,7 @@ class UniqueTableReferenceT(typing.NamedTuple):
     has_tensor_factorisation: bool
     tensor_factors: list[typing.Any]
     tensor_permutation: np.typing.NDArray[np.int32]
+    is_runtime: bool
     basix_index: int
     element_hash: int
     local_element_id: int
@@ -538,6 +539,7 @@ def build_optimized_tables(
                         False,
                         None,
                         None,
+            quadrature_rule.is_runtime,
                         None,
                         None,
                         None,
@@ -577,6 +579,7 @@ def build_optimized_tables(
             tensor_factors is not None,
             tensor_factors,
             tensor_perm,
+            quadrature_rule.is_runtime,
             basix_idx,
             hash,
             element_number
