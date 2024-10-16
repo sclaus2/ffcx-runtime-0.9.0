@@ -314,7 +314,8 @@ class IntegralGenerator:
             iq.sizes[0] = self.backend.symbols.runtime_num_points
 
         code = definitions + intermediates + tensor_comp
-        code = optimize(code, quadrature_rule)
+        if quadrature_rule.is_runtime == False:
+          code = optimize(code, quadrature_rule)
 
         return [L.create_nested_for_loops([iq], code)]
 
@@ -602,7 +603,7 @@ class IntegralGenerator:
       output = [tbl_offset, tbl_id]
 
       declarations = [L.ArrayDecl(tbl_offset, sizes=(num_elements), values=None, const=False)]
-      declarations += [L.ArrayDecl(tbl_id, sizes=(num_elements,2), values=None, const=False)]
+      declarations += [L.ArrayDecl(tbl_id, sizes=(num_elements,3), values=None, const=False)]
 
       intermediates = [L.Assign(tbl_offset[0], 0)]
       intermediates += [L.Assign(tbl_id[0][2], shape[3])]

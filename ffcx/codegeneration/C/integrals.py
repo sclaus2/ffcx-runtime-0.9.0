@@ -85,7 +85,7 @@ def generator(ir: IntegralIR, options):
 
         values = ", ".join(str(i) for i in ir.expression.finite_element_deriv_order)
         code["finite_element_deriv_order_init"] = (
-            f"int finite_deriv_order_hashes_{ir.expression.name}[{sizes}] = {{{values}}};"
+            f"int finite_element_deriv_order_{ir.expression.name}[{sizes}] = {{{values}}};"
         )
         code["finite_element_deriv_order"] = f"finite_element_deriv_order_{ir.expression.name}"
       else:

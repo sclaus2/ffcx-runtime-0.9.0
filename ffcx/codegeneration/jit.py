@@ -365,7 +365,6 @@ def _compile_objects(
         libraries=libraries,
     )
 
-    print(decl)
     ffibuilder.cdef(decl)
 
     c_filename = cache_dir.joinpath(module_name + ".c")
