@@ -145,8 +145,9 @@ class FFCXBackendDefinitions:
         # Get access to element table
         FE, tables = self.access.table_access(tabledata, self.entity_type, mt.restriction, iq, ic)
 
-        if quadrature_rule.is_runtime:
-          FE, tables = self.access.runtime_table_access(tabledata, iq, ic)
+        if isinstance(quadrature_rule,QuadratureRule):
+          if quadrature_rule.is_runtime:
+            FE, tables = self.access.runtime_table_access(tabledata, iq, ic)
 
         dof_access: L.ArrayAccess = self.symbols.coefficient_dof_access(
             mt.terminal, (ic.global_index) * bs + begin
@@ -199,8 +200,9 @@ class FFCXBackendDefinitions:
 
         FE, tables = self.access.table_access(tabledata, self.entity_type, mt.restriction, iq, ic)
 
-        if quadrature_rule.is_runtime:
-          FE, tables = self.access.runtime_table_access(tabledata, iq, ic)
+        if isinstance(quadrature_rule,QuadratureRule):
+          if quadrature_rule.is_runtime:
+            FE, tables = self.access.runtime_table_access(tabledata, iq, ic)
 
         dof_access = L.Symbol("coordinate_dofs", dtype=L.DataType.REAL)
 

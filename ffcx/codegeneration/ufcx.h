@@ -49,7 +49,7 @@ extern "C"
     exterior_facet = 1,
     interior_facet = 2,
     cutcell = 3,
-    interface = 4,
+    interface = 4
   } ufcx_integral_type;
 
   // </HEADER_DECL>

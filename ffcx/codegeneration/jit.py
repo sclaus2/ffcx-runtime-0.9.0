@@ -69,17 +69,11 @@ UFC_INTEGRAL_DECL += "\n".join(
     re.findall(r"typedef void ?\(ufcx_tabulate_tensor_complex128\).*?\);", ufcx_h, re.DOTALL)
 )
 
-UFC_INTEGRAL_DECL = "\n".join(
+UFC_INTEGRAL_DECL += "\n".join(
     re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_float32\).*?\);", ufcx_h, re.DOTALL)
 )
 UFC_INTEGRAL_DECL += "\n".join(
     re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_float64\).*?\);", ufcx_h, re.DOTALL)
-)
-UFC_INTEGRAL_DECL += "\n".join(
-    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_complex64\).*?\);", ufcx_h, re.DOTALL)
-)
-UFC_INTEGRAL_DECL += "\n".join(
-    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_complex128\).*?\);", ufcx_h, re.DOTALL)
 )
 
 UFC_INTEGRAL_DECL += "\n".join(
@@ -371,6 +365,7 @@ def _compile_objects(
         libraries=libraries,
     )
 
+    print(decl)
     ffibuilder.cdef(decl)
 
     c_filename = cache_dir.joinpath(module_name + ".c")
