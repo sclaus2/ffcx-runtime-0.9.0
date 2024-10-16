@@ -160,6 +160,8 @@ class IntegralGenerator:
         # Pre-definitions are collected across all quadrature loops to
         # improve re-use and avoid name clashes
         for rule in self.ir.expression.integrand.keys():
+            if(rule.is_runtime):
+                all_preparts += self.generate_table_indexing(rule)
             # Generate code to compute piecewise constant scalar factors
             all_preparts += self.generate_piecewise_partition(rule)
 
@@ -589,3 +591,39 @@ class IntegralGenerator:
         quadparts += [L.Section("Tensor Computation", body, [], input, output, annotations)]
 
         return quadparts, intermediates
+
+    def generate_table_indexing(self, quadrature_rule: QuadratureRule):
+      num_elements = len(self.ir.expression.finite_element_hashes)
+      shape = self.backend.symbols.runtime_shape
+      tbl_offset = self.backend.symbols.runtime_tbl_off
+      tbl_id = self.backend.symbols.runtime_tbl_i
+
+      input = [shape]
+      output = [tbl_offset, tbl_id]
+
+      declarations = [L.ArrayDecl(tbl_offset, sizes=(num_elements), values=None, const=False)]
+      declarations += [L.ArrayDecl(tbl_id, sizes=(num_elements,2), values=None, const=False)]
+
+      intermediates = [L.Assign(tbl_offset[0], 0)]
+      intermediates += [L.Assign(tbl_id[0][2], shape[3])]
+      prod = L.Product([shape[3],shape[2]])
+      intermediates += [L.Assign(tbl_id[0][1], prod)]
+      prod = L.Product([shape[3],shape[2],shape[1]])
+      intermediates += [L.Assign(tbl_id[0][0], prod)]
+
+      if num_elements>1:
+        shape_offset = L.Symbol("shape_offset", dtype=L.DataType.INT)
+        el = L.Symbol("el", dtype=L.DataType.INT)
+
+        body = [L.VariableDecl(shape_offset,4*(el-1))]
+        body += [L.Assign(tbl_offset[el], shape[shape_offset]*shape[1+shape_offset]
+                          *shape[2+shape_offset]*shape[3+shape_offset] + tbl_offset[el-1])]
+        body += [L.Assign(tbl_id[el][0],shape[1+shape_offset]*shape[2+shape_offset]*shape[3+shape_offset])]
+        body += [L.Assign(tbl_id[el][1],shape[2+shape_offset]*shape[3+shape_offset])]
+        body += [L.Assign(tbl_id[el][2],shape[3+shape_offset])]
+
+        intermediates += [L.ForRange(el, 1, num_elements, body)]
+
+      preparts = [L.Section("Table index access", intermediates, declarations, input, output)]
+
+      return preparts

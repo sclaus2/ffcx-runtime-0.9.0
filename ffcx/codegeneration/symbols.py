@@ -103,6 +103,9 @@ class FFCXBackendSymbols:
         self.runtime_num_points = L.Symbol("num_points[0]", dtype=L.DataType.INT)
         # shape of runtime tables
         self.runtime_shape = L.Symbol("shape", dtype=L.DataType.INT)
+        self.runtime_tbl_off = L.Symbol("tbl_offset", dtype=L.DataType.INT)
+        self.runtime_tbl_i = L.Symbol("tbl_i", dtype=L.DataType.INT)
+        self.runtime_tbl_name = L.Symbol("FE", dtype=L.DataType.INT)
 
     def entity(self, entity_type, restriction):
         """Entity index for lookup in element tables."""

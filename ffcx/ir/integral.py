@@ -191,8 +191,8 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
         ir["finite_element_hashes"] = finite_element_hashes
         ir["finite_element_deriv_order"] = finite_element_deriv_order
 
-        print("finite elements=", finite_element_hashes)
-        print("finite_element_deriv_order=", finite_element_deriv_order)
+        #print("finite elements=", finite_element_hashes)
+        #print("finite_element_deriv_order=", finite_element_deriv_order)
 
         # Loop over factorization terms
         block_contributions = collections.defaultdict(list)

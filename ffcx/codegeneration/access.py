@@ -469,23 +469,44 @@ class FFCXBackendAccess:
 
         symbols = []
 
+        name = self.symbols.runtime_tbl_name
+        tbl_offset = self.symbols.runtime_tbl_off
+        tbl_id = self.symbols.runtime_tbl_i
+        el = L.LiteralInt(tabledata.local_element_id)
+        basix_idx = L.LiteralInt(tabledata.basix_index)
+        component = L.LiteralInt(0)
+
         if dof_index.dim == 1 and quadrature_index.dim == 1:
-            name = "FE"+ str(tabledata.local_element_id)
-            basix_idx = L.LiteralInt(tabledata.basix_index)
-            component = L.LiteralInt(0)
-            symbols += [L.Symbol(name, dtype=L.DataType.REAL)]
-            return self.symbols.element_tables[name][basix_idx][iq_global_index][ic_global_index][component], symbols
+            i1 = basix_idx
+            i2 = iq_global_index
+            i3 = ic_global_index
+            i4 = component
+            prod1 = L.Product([i1,tbl_id[el][0]])
+            prod2 = L.Product([i2,tbl_id[el][1]])
+            prod3 = L.Product([i3,tbl_id[el][2]])
+            add = prod1 + prod2 + prod3 + i4 + tbl_offset[el]
+
+            arr = L.ArrayAccess(name, [add])
+            symbols += [name]
+            return arr, symbols
         else:
             FE = []
             for i in range(dof_index.dim):
                 factor = tabledata.tensor_factors[i]
-                name = "FE"+ str(tabledata.local_element_id)
-                basix_idx = L.LiteralInt(tabledata.basix_index)
-                component = L.LiteralInt(0)
                 iq_i = quadrature_index.local_index(i)
                 ic_i = dof_index.local_index(i)
-                table = self.symbols.element_tables[name][basix_idx][iq_i][ic_i][component]
-                symbols += [L.Symbol(name, dtype=L.DataType.REAL)]
-                FE.append(table)
+                i1 = basix_idx
+                i2 = iq_i
+                i3 = ic_i
+                i4 = component
+                prod1 = L.Product([i1,tbl_id[el][0]])
+                prod2 = L.Product([i2,tbl_id[el][1]])
+                prod3 = L.Product([i3,tbl_id[el][2]])
+                add = prod1 + prod2 + prod3 + i4 + tbl_offset[el]
+
+                arr = L.ArrayAccess(name, [add])
+
+                symbols += [L.Symbol(factor.name, dtype=L.DataType.REAL)]
+                FE.append(arr)
             return L.Product(FE), symbols
 
