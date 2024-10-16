@@ -237,8 +237,10 @@ class IntegralGenerator:
             table_names = [name for name in sorted(tables) if table_types[name] in piecewise_ttypes]
         elif self.ir.expression.integral_type in ("cutcell", "interface"):
             #register table names as symbols but do not return code
-            for hash, data in self.ir.expression.finite_elements.items():
-                name = "FE" + str(data[0])
+            id = 0
+            for el in self.ir.expression.finite_element_hashes:
+                name = "FE" + str(id)
+                id = id +1
                 table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
                 self.backend.symbols.element_tables[name] = table_symbol
 

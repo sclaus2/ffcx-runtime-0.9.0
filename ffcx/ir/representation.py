@@ -76,9 +76,9 @@ class CommonExpressionIR(typing.NamedTuple):
     unique_tables: dict[str, npt.NDArray[np.float64]]
     unique_table_types: dict[str, str]
     # map from finite element hash to its number and maximum derivative
-    finite_elements: dict[int, tuple[int, int]]
-    # map from table name to element number and derivative (basix_index)
-    table_element_reference: dict[str, tuple[int, int]]
+    finite_element_hashes: list[int]
+    # maximum derivative for each finite element
+    finite_element_deriv_order: list[int]
     integrand: dict[QuadratureRule, dict]
     name: str
     needs_facet_permutations: bool

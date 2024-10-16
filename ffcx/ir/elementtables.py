@@ -680,8 +680,6 @@ def extract_finite_element_data(F):
 
         table_element_reference.append(RuntimeTableData(tr.name,element,element.basix_hash(),deriv_order,basix_idx))
 
-    print("table element ref=", table_element_reference)
-
     ###########################################################################
     # From table element reference data collect all necessary information     #
     # about which element components are used in integral and derivative order#
@@ -705,38 +703,25 @@ def extract_finite_element_data(F):
         id = id + 1
 
     #build map from finite element hash to maximum derivative order
-    finite_element_deriv_order = {}
+    finite_element_hash_deriv_order = {}
 
     #initialise entries with default of no derivatives
     for el in finite_element_hashes:
-        finite_element_deriv_order[el] = 0
+        finite_element_hash_deriv_order[el] = 0
 
     #now determine the highest order of derivative used in tables
     for rt_data in table_element_reference:
         element_hash = rt_data.component_element_hash
-        if finite_element_deriv_order[element_hash] < rt_data.deriv_order:
-            finite_element_deriv_order[element_hash] = rt_data.deriv_order
+        if finite_element_hash_deriv_order[element_hash] < rt_data.deriv_order:
+            finite_element_hash_deriv_order[element_hash] = rt_data.deriv_order
 
-    hash_to_element = {}
-
-    for rt_data in table_element_reference:
-        element = rt_data.component_element
-        element_hash = rt_data.component_element_hash
-        hash_to_element[element_hash] = element
-
-    print("hash to element", hash_to_element)
-
+    #create list of maximum derivatives in order of list of fe hashes finite_element_hashes
+    finite_element_deriv_order = []
     for el in finite_element_hashes:
-        hash_to_element[el].tabulate()
-
-
-    #Concanate information
-    finite_element_data = {}
-    for el in finite_element_hashes:
-        finite_element_data[el] = (finite_element_ids[el],finite_element_deriv_order[el])
+        finite_element_deriv_order.append(finite_element_hash_deriv_order[el])
 
     ###########################################################################
-    # Update numbering in tables                                              #
+    # Update numbering in tables in graph F                                   #
     ###########################################################################
 
     for i, v in F.nodes.items():
@@ -746,16 +731,4 @@ def extract_finite_element_data(F):
         if tr.local_element_id != finite_element_ids[tr.element_hash]:
           F.nodes[i]["tr"] = tr._replace(local_element_id = finite_element_ids[tr.element_hash])
 
-    ###########################################################################
-    # Now from these element information create the reference between         #
-    # element table names and the element hashes as well as the basix index   #
-    # this is to copy and paste the right values from the tabulate call into  #
-    # table variables                                                         #
-    ###########################################################################
-    table_element_data = {}
-
-    for rt_data in table_element_reference:
-        el = rt_data.component_element_hash
-        table_element_data[rt_data.name] = (finite_element_ids[el], rt_data.basix_index)
-
-    return finite_element_data, table_element_data
+    return finite_element_hashes, finite_element_deriv_order

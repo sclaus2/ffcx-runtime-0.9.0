@@ -61,34 +61,89 @@ def generator(ir: IntegralIR, options):
 
     code["tabulate_tensor"] = body
 
-    code["tabulate_tensor_float32"] = ".tabulate_tensor_float32 = NULL,"
-    code["tabulate_tensor_float64"] = ".tabulate_tensor_float64 = NULL,"
-    if sys.platform.startswith("win32"):
-        code["tabulate_tensor_complex64"] = ""
-        code["tabulate_tensor_complex128"] = ""
-    else:
-        code["tabulate_tensor_complex64"] = ".tabulate_tensor_complex64 = NULL,"
-        code["tabulate_tensor_complex128"] = ".tabulate_tensor_complex128 = NULL,"
-    np_scalar_type = np.dtype(options["scalar_type"]).name
-    code[f"tabulate_tensor_{np_scalar_type}"] = (
-        f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
-    )
-
     element_hash = 0 if ir.coordinate_element_hash is None else ir.coordinate_element_hash
+    np_scalar_type = np.dtype(options["scalar_type"]).name
 
-    implementation = ufcx_integrals.factory.format(
-        factory_name=factory_name,
-        enabled_coefficients=code["enabled_coefficients"],
-        enabled_coefficients_init=code["enabled_coefficients_init"],
-        tabulate_tensor=code["tabulate_tensor"],
-        needs_facet_permutations="true" if ir.expression.needs_facet_permutations else "false",
-        scalar_type=dtype_to_c_type(options["scalar_type"]),
-        geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
-        coordinate_element_hash=f"UINT64_C({element_hash})",
-        tabulate_tensor_float32=code["tabulate_tensor_float32"],
-        tabulate_tensor_float64=code["tabulate_tensor_float64"],
-        tabulate_tensor_complex64=code["tabulate_tensor_complex64"],
-        tabulate_tensor_complex128=code["tabulate_tensor_complex128"],
-    )
+    if ir.expression.integral_type in ("cutcell", "interface"):
+
+      if(np_scalar_type in ("complex64", "complex128")):
+         print("Not implemented for cutcell integrals")
+
+      num_elements = len(ir.expression.finite_element_hashes)
+      assert(num_elements == len(ir.expression.finite_element_deriv_order))
+
+      if num_elements> 0:
+        values = ", ".join(
+            f"UINT64_C({0 if el is None else el})" for el in ir.expression.finite_element_hashes
+        )
+        sizes = num_elements
+        code["finite_element_hashes_init"] = (
+            f"uint64_t finite_element_hashes_{ir.expression.name}[{sizes}] = {{{values}}};"
+        )
+
+        code["finite_element_hashes"] = f"finite_element_hashes_{ir.expression.name}"
+
+        values = ", ".join(str(i) for i in ir.expression.finite_element_deriv_order)
+        code["finite_element_deriv_order_init"] = (
+            f"int finite_deriv_order_hashes_{ir.expression.name}[{sizes}] = {{{values}}};"
+        )
+        code["finite_element_deriv_order"] = f"finite_element_deriv_order_{ir.expression.name}"
+      else:
+          code["finite_element_hashes_init"] = ""
+          code["finite_element_hashes"] = "NULL"
+          code["finite_element_deriv_order_init"] = ""
+          code["finite_element_deriv_order"] = "NULL"
+
+      code["tabulate_tensor_float32"] = ".tabulate_tensor_runtime_quad_float32 = NULL,"
+      code["tabulate_tensor_float64"] = ".tabulate_tensor_runtime_quad_float64 = NULL,"
+
+      code[f"tabulate_tensor_{np_scalar_type}"] = (
+          f".tabulate_tensor_runtime_quad_{np_scalar_type} = tabulate_tensor_runtime_quad_{factory_name},"
+      )
+
+      implementation = ufcx_integrals.factory_runtime_quad.format(
+          factory_name=factory_name,
+          enabled_coefficients=code["enabled_coefficients"],
+          enabled_coefficients_init=code["enabled_coefficients_init"],
+          finite_element_hashes=code["finite_element_hashes"],
+          finite_element_hashes_init=code["finite_element_hashes_init"],
+          finite_element_deriv_order=code["finite_element_deriv_order"],
+          finite_element_deriv_order_init=code["finite_element_deriv_order_init"],
+          tabulate_tensor=code["tabulate_tensor"],
+          needs_facet_permutations="true" if ir.expression.needs_facet_permutations else "false",
+          scalar_type=dtype_to_c_type(options["scalar_type"]),
+          geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
+          coordinate_element_hash=f"UINT64_C({element_hash})",
+          tabulate_tensor_float32=code["tabulate_tensor_float32"],
+          tabulate_tensor_float64=code["tabulate_tensor_float64"],
+      )
+    else:
+      code["tabulate_tensor_float32"] = ".tabulate_tensor_float32 = NULL,"
+      code["tabulate_tensor_float64"] = ".tabulate_tensor_float64 = NULL,"
+      if sys.platform.startswith("win32"):
+          code["tabulate_tensor_complex64"] = ""
+          code["tabulate_tensor_complex128"] = ""
+      else:
+          code["tabulate_tensor_complex64"] = ".tabulate_tensor_complex64 = NULL,"
+          code["tabulate_tensor_complex128"] = ".tabulate_tensor_complex128 = NULL,"
+
+      code[f"tabulate_tensor_{np_scalar_type}"] = (
+          f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
+      )
+
+      implementation = ufcx_integrals.factory.format(
+          factory_name=factory_name,
+          enabled_coefficients=code["enabled_coefficients"],
+          enabled_coefficients_init=code["enabled_coefficients_init"],
+          tabulate_tensor=code["tabulate_tensor"],
+          needs_facet_permutations="true" if ir.expression.needs_facet_permutations else "false",
+          scalar_type=dtype_to_c_type(options["scalar_type"]),
+          geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
+          coordinate_element_hash=f"UINT64_C({element_hash})",
+          tabulate_tensor_float32=code["tabulate_tensor_float32"],
+          tabulate_tensor_float64=code["tabulate_tensor_float64"],
+          tabulate_tensor_complex64=code["tabulate_tensor_complex64"],
+          tabulate_tensor_complex128=code["tabulate_tensor_complex128"],
+      )
 
     return declaration, implementation

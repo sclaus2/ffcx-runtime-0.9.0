@@ -101,6 +101,8 @@ class FFCXBackendSymbols:
         self.runtime_points = L.Symbol("points", dtype=L.DataType.REAL)
         # Number of points in runtime quadrature rule
         self.runtime_num_points = L.Symbol("num_points[0]", dtype=L.DataType.INT)
+        # shape of runtime tables
+        self.runtime_shape = L.Symbol("shape", dtype=L.DataType.INT)
 
     def entity(self, entity_type, restriction):
         """Entity index for lookup in element tables."""

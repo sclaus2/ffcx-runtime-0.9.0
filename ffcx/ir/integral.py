@@ -185,14 +185,14 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
         if visualise:
             visualise_graph(F, "F.pdf")
 
-        # build list of active finite elements in integral
+        # build list of active finite elements in integral and their maximum derivatives
         # and correct local finite element numbering in F.nodes[i]["tr"] accordingly
-        finite_element_data, table_element_reference = extract_finite_element_data(F)
-        ir["finite_elements"] = finite_element_data
-        ir["table_element_reference"] = table_element_reference
+        finite_element_hashes, finite_element_deriv_order = extract_finite_element_data(F)
+        ir["finite_element_hashes"] = finite_element_hashes
+        ir["finite_element_deriv_order"] = finite_element_deriv_order
 
-        print("finite elements=", finite_elements)
-        print("table_element_reference", table_element_reference)
+        print("finite elements=", finite_element_hashes)
+        print("finite_element_deriv_order=", finite_element_deriv_order)
 
         # Loop over factorization terms
         block_contributions = collections.defaultdict(list)
