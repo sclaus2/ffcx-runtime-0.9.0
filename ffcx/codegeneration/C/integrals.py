@@ -105,6 +105,7 @@ def generator(ir: IntegralIR, options):
           factory_name=factory_name,
           enabled_coefficients=code["enabled_coefficients"],
           enabled_coefficients_init=code["enabled_coefficients_init"],
+          num_finite_elements = num_elements,
           finite_element_hashes=code["finite_element_hashes"],
           finite_element_hashes_init=code["finite_element_hashes_init"],
           finite_element_deriv_order=code["finite_element_deriv_order"],

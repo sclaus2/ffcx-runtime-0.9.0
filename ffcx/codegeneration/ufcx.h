@@ -136,7 +136,7 @@ extern "C"
       const float* restrict points,
       const float* restrict weights,
       const float* restrict FE,
-      const int* restrict shape);
+      const size_t* restrict shape);
 
   typedef void(ufcx_tabulate_tensor_runtime_quad_float64)(
       double* restrict A, const double* restrict w,
@@ -147,7 +147,7 @@ extern "C"
       const double* restrict points,
       const double* restrict weights,
       const double* restrict FE,
-      const int* restrict shape);
+      const size_t* restrict shape);
 
   typedef struct ufcx_integral
   {
@@ -164,6 +164,9 @@ extern "C"
 
     /// Get the hash of the coordinate element associated with the geometry of the mesh.
     uint64_t coordinate_element_hash;
+
+    /// Number of finite elements
+    int num_fe;
 
     /// Get the hash of finite elements used in integrals with runtime quadrature
     uint64_t* finite_element_hashes;

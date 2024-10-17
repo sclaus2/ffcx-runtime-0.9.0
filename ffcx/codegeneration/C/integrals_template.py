@@ -49,7 +49,7 @@ void tabulate_tensor_runtime_quad_{factory_name}({scalar_type}* restrict A,
                                     const {geom_type}* restrict points,
                                     const {geom_type}* restrict weights,
                                     const {scalar_type}* restrict FE,
-                                    const int* restrict shape)
+                                    const size_t* restrict shape)
 {{
 {tabulate_tensor}
 }}
@@ -66,6 +66,7 @@ ufcx_integral {factory_name} =
   {tabulate_tensor_float64}
   .needs_facet_permutations = {needs_facet_permutations},
   .coordinate_element_hash = {coordinate_element_hash},
+  .num_fe = {num_finite_elements},
   .finite_element_hashes = {finite_element_hashes},
   .finite_element_deriv_order = {finite_element_deriv_order},
 }};
