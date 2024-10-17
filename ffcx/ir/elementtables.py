@@ -725,13 +725,15 @@ def extract_finite_element_data(F):
     for el in finite_element_hashes:
         finite_element_deriv_order.append(finite_element_hash_deriv_order[el])
 
+    #print("fe_ids=", finite_element_ids)
+
     ###########################################################################
     # Update numbering in tables in graph F                                   #
     ###########################################################################
 
     for i, v in F.nodes.items():
       tr = v.get("tr")
-      if tr is not None and F.nodes[i]["status"] != "inactive":
+      if tr is not None:
         #check if element id has changed since creation of tr
         if tr.local_element_id != finite_element_ids[tr.element_hash]:
           F.nodes[i]["tr"] = tr._replace(local_element_id = finite_element_ids[tr.element_hash])

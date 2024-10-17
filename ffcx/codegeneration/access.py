@@ -474,7 +474,7 @@ class FFCXBackendAccess:
         tbl_id = self.symbols.runtime_tbl_i
         el = L.LiteralInt(tabledata.local_element_id)
         basix_idx = L.LiteralInt(tabledata.basix_index)
-        component = L.LiteralInt(0)
+        component = L.LiteralInt(0) #TODO: check if this is correct
 
         if dof_index.dim == 1 and quadrature_index.dim == 1:
             i1 = basix_idx
@@ -486,6 +486,7 @@ class FFCXBackendAccess:
             prod3 = L.Product([i3,tbl_id[el][2]])
             add = prod1 + prod2 + prod3 + i4 + tbl_offset[el]
 
+            #optimizer fails with this find out why
             arr = L.ArrayAccess(name, [add])
             symbols += [name]
             return arr, symbols
