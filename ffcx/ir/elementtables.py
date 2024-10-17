@@ -735,7 +735,9 @@ def extract_finite_element_data(F):
       tr = v.get("tr")
       if tr is not None:
         #check if element id has changed since creation of tr
-        if tr.local_element_id != finite_element_ids[tr.element_hash]:
-          F.nodes[i]["tr"] = tr._replace(local_element_id = finite_element_ids[tr.element_hash])
+        id = finite_element_ids.get(tr.element_hash)
+        if id is not None:
+          if tr.local_element_id != id:
+            F.nodes[i]["tr"] = tr._replace(local_element_id = finite_element_ids[tr.element_hash])
 
     return finite_element_hashes, finite_element_deriv_order
