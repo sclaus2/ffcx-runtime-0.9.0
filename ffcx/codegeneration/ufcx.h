@@ -48,8 +48,6 @@ extern "C"
     cell = 0,
     exterior_facet = 1,
     interior_facet = 2,
-    cutcell = 3,
-    interface = 4
   } ufcx_integral_type;
 
   // </HEADER_DECL>
@@ -127,7 +125,7 @@ extern "C"
 #endif // __STDC_NO_COMPLEX__
 
   /// @brief  Tabulate tensor for integrals with quadrature rule given at run-time
-  typedef void(ufcx_tabulate_tensor_runtime_quad_float32)(
+  typedef void(ufcx_tabulate_tensor_runtime_float32)(
       float* restrict A, const float* restrict w,
       const float* restrict c, const float* restrict coordinate_dofs,
       const int* restrict entity_local_index,
@@ -138,7 +136,7 @@ extern "C"
       const float* restrict FE,
       const size_t* restrict shape);
 
-  typedef void(ufcx_tabulate_tensor_runtime_quad_float64)(
+  typedef void(ufcx_tabulate_tensor_runtime_float64)(
       double* restrict A, const double* restrict w,
       const double* restrict c, const double* restrict coordinate_dofs,
       const int* restrict entity_local_index,
@@ -158,8 +156,8 @@ extern "C"
     ufcx_tabulate_tensor_complex64* tabulate_tensor_complex64;
     ufcx_tabulate_tensor_complex128* tabulate_tensor_complex128;
 #endif // __STDC_NO_COMPLEX__
-    ufcx_tabulate_tensor_runtime_quad_float32* tabulate_tensor_runtime_quad_float32;
-    ufcx_tabulate_tensor_runtime_quad_float64* tabulate_tensor_runtime_quad_float64;
+    ufcx_tabulate_tensor_runtime_float32* tabulate_tensor_runtime_float32;
+    ufcx_tabulate_tensor_runtime_float64* tabulate_tensor_runtime_float64;
     bool needs_facet_permutations;
 
     /// Get the hash of the coordinate element associated with the geometry of the mesh.
@@ -190,8 +188,8 @@ extern "C"
     ufcx_tabulate_tensor_complex64* tabulate_tensor_complex64;
     ufcx_tabulate_tensor_complex128* tabulate_tensor_complex128;
 #endif // __STDC_NO_COMPLEX__
-    ufcx_tabulate_tensor_runtime_quad_float32* tabulate_tensor_runtime_quad_float32;
-    ufcx_tabulate_tensor_runtime_quad_float64* tabulate_tensor_runtime_quad_float64;
+    ufcx_tabulate_tensor_runtime_float32* tabulate_tensor_runtime_float32;
+    ufcx_tabulate_tensor_runtime_float64* tabulate_tensor_runtime_float64;
 
     /// Number of coefficients
     int num_coefficients;

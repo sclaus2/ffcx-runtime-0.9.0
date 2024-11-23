@@ -70,10 +70,10 @@ UFC_INTEGRAL_DECL += "\n".join(
 )
 
 UFC_INTEGRAL_DECL += "\n".join(
-    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_float32\).*?\);", ufcx_h, re.DOTALL)
+    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_float32\).*?\);", ufcx_h, re.DOTALL)
 )
 UFC_INTEGRAL_DECL += "\n".join(
-    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_quad_float64\).*?\);", ufcx_h, re.DOTALL)
+    re.findall(r"typedef void ?\(ufcx_tabulate_tensor_runtime_float64\).*?\);", ufcx_h, re.DOTALL)
 )
 
 UFC_INTEGRAL_DECL += "\n".join(

@@ -258,38 +258,46 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
             # Insert in expr_ir for this quadrature loop
             block_contributions[blockmap].append(blockdata)
 
-        # Figure out which table names are referenced
-        active_table_names = set()
-        for i, v in F.nodes.items():
-            tr = v.get("tr")
-            if tr is not None and F.nodes[i]["status"] != "inactive":
-                if tr.has_tensor_factorisation:
-                    for t in tr.tensor_factors:
-                        active_table_names.add(t.name)
-                else:
-                    active_table_names.add(tr.name)
-
-        # Figure out which table names are referenced in blocks
-        for blockmap, contributions in itertools.chain(block_contributions.items()):
-            for blockdata in contributions:
-                for mad in blockdata.ma_data:
-                    if mad.tabledata.has_tensor_factorisation:
-                        for t in mad.tabledata.tensor_factors:
-                            active_table_names.add(t.name)
-                    else:
-                        active_table_names.add(mad.tabledata.name)
-
         active_tables = {}
         active_table_types = {}
 
-        for name in active_table_names:
-            # Drop tables not referenced from modified terminals
-            if table_types[name] not in ("zeros", "ones"):
-                active_tables[name] = tables[name]
-                active_table_types[name] = table_types[name]
+        if(quadrature_rule.is_runtime):
+          #override unique tables here
+          name = "FE" #+ str(id)
+          #id = id +1
+          active_tables[name] = 0
+          active_table_types[name] = "runtime"
+        else:
+          # Figure out which table names are referenced
+          active_table_names = set()
+          for i, v in F.nodes.items():
+              tr = v.get("tr")
+              if tr is not None and F.nodes[i]["status"] != "inactive":
+                  if tr.has_tensor_factorisation:
+                      for t in tr.tensor_factors:
+                          active_table_names.add(t.name)
+                  else:
+                      active_table_names.add(tr.name)
+
+          # Figure out which table names are referenced in blocks
+          for blockmap, contributions in itertools.chain(block_contributions.items()):
+              for blockdata in contributions:
+                  for mad in blockdata.ma_data:
+                      if mad.tabledata.has_tensor_factorisation:
+                          for t in mad.tabledata.tensor_factors:
+                              active_table_names.add(t.name)
+                      else:
+                          active_table_names.add(mad.tabledata.name)
+
+          for name in active_table_names:
+              # Drop tables not referenced from modified terminals
+              if table_types[name] not in ("zeros", "ones"):
+                  active_tables[name] = tables[name]
+                  active_table_types[name] = table_types[name]
 
         ir["unique_tables"].update(active_tables)
         ir["unique_table_types"].update(active_table_types)
+
         # Build IR dict for the given expressions
         # Store final ir for this num_points
         ir["integrand"][quadrature_rule] = {

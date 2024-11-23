@@ -130,12 +130,14 @@ def compute_ir(
     finite_element_hashes = {e: e.basix_hash() for e in analysis.unique_elements}
     integral_names = {}
     form_names = {}
+
     for fd_index, fd in enumerate(analysis.form_data):
         form_names[fd_index] = naming.form_name(fd.original_form, fd_index, prefix)
         for itg_index, itg_data in enumerate(fd.integral_data):
             integral_names[(fd_index, itg_index)] = naming.integral_name(
                 fd.original_form, itg_data.integral_type, fd_index, itg_data.subdomain_id, prefix
             )
+
 
     irs = [
         _compute_integral_ir(
@@ -201,9 +203,7 @@ def _compute_integral_ir(
         "exterior_facet": "facet",
         "interior_facet": "facet",
         "vertex": "vertex",
-        "custom": "cell",
-        "cutcell": "cell",
-        "interface": "facet",
+        "custom": "cell"
     }
 
     # Iterate over groups of integrals
@@ -245,7 +245,7 @@ def _compute_integral_ir(
         ]
 
         # Compute shape of element tensor
-        if expression_ir["integral_type"] == ("interior_facet" or "interface"):
+        if expression_ir["integral_type"] == ("interior_facet"):
             expression_ir["tensor_shape"] = [2 * dim for dim in argument_dimensions]
         else:
             expression_ir["tensor_shape"] = argument_dimensions
@@ -263,16 +263,16 @@ def _compute_integral_ir(
             if scheme == "custom":
                 points = md["quadrature_points"]
                 weights = md["quadrature_weights"]
-            elif integral_type == "cutcell":
+            elif scheme == "runtime":
                 #use default rule for now
                 #remove this later
-                  points, weights, tensor_factors = create_quadrature_points_and_weights(
-                    "cell",
-                    cell,
-                    2,
-                    "default",
-                    form_data.argument_elements,
-                    use_sum_factorization,
+                points, weights, tensor_factors = create_quadrature_points_and_weights(
+                  "cell",
+                  cell,
+                  2,
+                  "default",
+                  form_data.argument_elements,
+                  use_sum_factorization,
                 )
             elif scheme == "vertex":
                 # FIXME: Could this come from basix?
@@ -359,7 +359,7 @@ def _compute_integral_ir(
             weights = np.asarray(weights)
             rule = QuadratureRule(points, weights, tensor_factors)
 
-            if(integral_type in ("cutcell", "interface")):
+            if(scheme=="runtime"):
                 # Flag rule as provided at runtime to change integral_ir
                 rule.is_runtime = True
 
@@ -392,7 +392,7 @@ def _compute_integral_ir(
 
         index_to_coeff = sorted([(v, k) for k, v in coefficient_numbering.items()])
         offsets = {}
-        width = 2 if integral_type in ("interior_facet", "interface") else 1
+        width = 2 if integral_type in ("interior_facet") else 1
         _offset = 0
         for k, el in zip(index_to_coeff, form_data.coefficient_elements):
             offsets[k[1]] = _offset
@@ -486,7 +486,7 @@ def _compute_form_ir(
     # it has to know their names for codegen phase
     ir["integral_names"] = {}
     ir["subdomain_ids"] = {}
-    ufcx_integral_types = ("cell", "exterior_facet", "interior_facet", "cutcell", "interface")
+    ufcx_integral_types = ("cell", "exterior_facet", "interior_facet")
     ir["subdomain_ids"] = {itg_type: [] for itg_type in ufcx_integral_types}
     ir["integral_names"] = {itg_type: [] for itg_type in ufcx_integral_types}
     for itg_index, itg_data in enumerate(form_data.integral_data):

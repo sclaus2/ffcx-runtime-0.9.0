@@ -137,7 +137,7 @@ class IntegralGenerator:
         """
         # Assert that scopes are empty: expecting this to be called only
         # once
-        assert not any(d for d in self.scopes.values())
+        #assert not any(d for d in self.scopes.values())
 
         parts = []
 
@@ -168,6 +168,45 @@ class IntegralGenerator:
             # Generate code to integrate reusable blocks of final
             # element tensor
             all_quadparts += self.generate_quadrature_loop(rule)
+
+        # Collect parts before, during, and after quadrature loops
+        parts += all_preparts
+        parts += all_quadparts
+
+        return L.StatementList(parts)
+
+    def generate_runtime(self, quadrature_rule: QuadratureRule):
+        """Generate runtime_tabulate_tensor body.
+
+        Assumes that the code returned from here will be wrapped in a
+        context that matches a suitable version of the UFC
+        tabulate_tensor signatures.
+
+        Note that each runtime rule requires its own function (only one rule supported)
+        """
+
+        assert(quadrature_rule.is_runtime)
+
+        parts = []
+
+        #Register FE as table symbol
+        name = "FE"
+        table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
+        self.backend.symbols.element_tables[name] = table_symbol
+
+        # Loop generation code will produce parts to go before
+        # quadloops, to define the quadloops, and to go after the
+        # quadloops
+        all_preparts = []
+        all_quadparts = []
+
+        all_preparts += self.generate_table_indexing(quadrature_rule)
+        # Generate code to compute piecewise constant scalar factors
+        all_preparts += self.generate_piecewise_partition(quadrature_rule)
+
+        # Generate code to integrate reusable blocks of final
+        # element tensor
+        all_quadparts += self.generate_quadrature_loop(quadrature_rule)
 
         # Collect parts before, during, and after quadrature loops
         parts += all_preparts
@@ -234,32 +273,23 @@ class IntegralGenerator:
         parts = []
         tables = self.ir.expression.unique_tables
         table_types = self.ir.expression.unique_table_types
+
         if self.ir.expression.integral_type == "custom":
             # Define only piecewise tables
             table_names = [name for name in sorted(tables) if table_types[name] in piecewise_ttypes]
-        elif self.ir.expression.integral_type in ("cutcell", "interface"):
-            #register table names as symbols but do not return code
-            id = 0
-            for el in self.ir.expression.finite_element_hashes:
-                name = "FE" + str(id)
-                id = id +1
-                table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
-                self.backend.symbols.element_tables[name] = table_symbol
-
-            #todo: remove this once codegen has improved
-            table_names = sorted(tables)
-            for name in table_names:
-              table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
-              self.backend.symbols.element_tables[name] = table_symbol
-
-            return parts
         else:
             # Define all tables
             table_names = sorted(tables)
 
         for name in table_names:
             table = tables[name]
-            parts += self.declare_table(name, table)
+
+            #if table is given at runtime just register name of table FE
+            if(table_types[name]=="runtime"):
+              table_symbol = L.Symbol(name, dtype=L.DataType.REAL)
+              self.backend.symbols.element_tables[name] = table_symbol
+            else:
+              parts += self.declare_table(name, table)
 
         # Add leading comment if there are any tables
         parts = L.commented_code_list(
@@ -504,7 +534,7 @@ class IntegralGenerator:
             if self.ir.expression.integral_type in ("custom"):
                 weights = self.backend.symbols.custom_weights_table
                 weight = weights[iq.global_index]
-            elif self.ir.expression.integral_type in ("cutcell", "interface"):
+            elif quadrature_rule.is_runtime:
                 weights = self.backend.symbols.runtime_weights
                 weight = weights[iq.global_index]
             else:

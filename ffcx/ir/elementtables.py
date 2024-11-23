@@ -112,15 +112,6 @@ def get_ffcx_table_values(
     """
     deriv_order = sum(derivative_counts)
 
-    if integral_type in ("custom", "cutcell"):
-        # Use quadrature points on cell for analysis in custom integral types
-        integral_type = "cell"
-        assert not avg
-
-    if integral_type in ("interface"):
-        # Use quadrature points on cell for analysis in custom integral types
-        integral_type = "interior_facet"
-
     if integral_type == "expression":
         # FFCx tables for expression are generated as either interior cell points
         # or points on a facet
@@ -539,7 +530,7 @@ def build_optimized_tables(
                         False,
                         None,
                         None,
-            quadrature_rule.is_runtime,
+                        quadrature_rule.is_runtime,
                         None,
                         None,
                         None,

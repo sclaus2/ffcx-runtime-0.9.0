@@ -8,7 +8,7 @@ declaration = """
 extern ufcx_integral {factory_name};
 """
 
-factory = """
+factory_tabulate = """
 // Code for integral {factory_name}
 
 void tabulate_tensor_{factory_name}({scalar_type}* restrict A,
@@ -20,26 +20,10 @@ void tabulate_tensor_{factory_name}({scalar_type}* restrict A,
 {{
 {tabulate_tensor}
 }}
-
-{enabled_coefficients_init}
-
-ufcx_integral {factory_name} =
-{{
-  .enabled_coefficients = {enabled_coefficients},
-  {tabulate_tensor_float32}
-  {tabulate_tensor_float64}
-  {tabulate_tensor_complex64}
-  {tabulate_tensor_complex128}
-  .needs_facet_permutations = {needs_facet_permutations},
-  .coordinate_element_hash = {coordinate_element_hash},
-}};
-
-// End of code for integral {factory_name}
 """
-factory_runtime_quad = """
-// Code for integral {factory_name}
 
-void tabulate_tensor_runtime_quad_{factory_name}({scalar_type}* restrict A,
+factory_runtime_tabulate = """
+void tabulate_tensor_runtime_{factory_name}({scalar_type}* restrict A,
                                     const {scalar_type}* restrict w,
                                     const {scalar_type}* restrict c,
                                     const {geom_type}* restrict coordinate_dofs,
@@ -51,10 +35,11 @@ void tabulate_tensor_runtime_quad_{factory_name}({scalar_type}* restrict A,
                                     const {scalar_type}* restrict FE,
                                     const size_t* restrict shape)
 {{
-{tabulate_tensor}
+{tabulate_tensor_runtime}
 }}
+"""
 
-
+factory_integral = """
 {enabled_coefficients_init}
 {finite_element_hashes_init}
 {finite_element_deriv_order_init}
@@ -64,6 +49,10 @@ ufcx_integral {factory_name} =
   .enabled_coefficients = {enabled_coefficients},
   {tabulate_tensor_float32}
   {tabulate_tensor_float64}
+  {tabulate_tensor_complex64}
+  {tabulate_tensor_complex128}
+  {tabulate_tensor_runtime_float32}
+  {tabulate_tensor_runtime_float64}
   .needs_facet_permutations = {needs_facet_permutations},
   .coordinate_element_hash = {coordinate_element_hash},
   .num_fe = {num_finite_elements},

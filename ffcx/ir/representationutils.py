@@ -102,10 +102,6 @@ def integral_type_to_entity_dim(integral_type, tdim):
         entity_dim = 0
     elif integral_type == "custom":
         entity_dim = tdim
-    elif integral_type == "cutcell":
-        entity_dim = tdim
-    elif integral_type == "interface":
-        entity_dim = tdim
     elif integral_type == "expression":
         entity_dim = tdim
     else:

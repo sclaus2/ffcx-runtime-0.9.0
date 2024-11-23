@@ -177,7 +177,7 @@ class FFCXBackendAccess:
         if mt.restriction:
             raise RuntimeError("Not expecting restriction of FacetCoordinate.")
 
-        if self.integral_type in ("interior_facet", "exterior_facet", "interface"):
+        if self.integral_type in ("interior_facet", "exterior_facet"):
             (tdim,) = mt.terminal.ufl_shape
             if tdim == 0:
                 raise RuntimeError("Vertices have no facet coordinates.")
