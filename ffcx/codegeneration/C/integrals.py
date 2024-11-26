@@ -64,6 +64,9 @@ def generator(ir: IntegralIR, options):
       CF = CFormatter(options["scalar_type"])
       body_runtime = CF.c_format(runtime_part)
 
+    #reinitialize IntegralGenerator for geometric data
+    ig = IntegralGenerator(ir, backend)
+
     parts = []
     body = []
 

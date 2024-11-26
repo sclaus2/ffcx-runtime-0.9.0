@@ -138,7 +138,6 @@ def compute_ir(
                 fd.original_form, itg_data.integral_type, fd_index, itg_data.subdomain_id, prefix
             )
 
-
     irs = [
         _compute_integral_ir(
             fd,
