@@ -467,7 +467,11 @@ def build_optimized_tables(
             )
         # Clean up table
         tbl = clamp_table_small_numbers(t["array"], rtol=rtol, atol=atol)
-        tabletype = analyse_table_type(tbl)
+        tabletype = []
+        if(quadrature_rule.is_runtime):# I do not know anything about table a priori for runtime rules
+          tabletype = "varying"
+        else:
+          tabletype = analyse_table_type(tbl)
 
         if tabletype in piecewise_ttypes:
             # Reduce table to dimension 1 along num_points axis in generated code

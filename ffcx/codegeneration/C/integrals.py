@@ -68,7 +68,7 @@ def generator(ir: IntegralIR, options):
     ig = IntegralGenerator(ir, backend)
 
     parts = []
-    body = []
+    body = " "
 
     #check if there is any standard integral
     if(len(ir.expression.integrand)>0):
@@ -96,22 +96,22 @@ def generator(ir: IntegralIR, options):
           code["tabulate_tensor_complex128"] = ".tabulate_tensor_complex128 = NULL,"
 
     #Generate code string for standard integral
-    if(len(body)>0):
-      # Take care of standard integrals first
-      code[f"tabulate_tensor_{np_scalar_type}"] = (
-          f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
-      )
+    # Note that this might be empty
+    # Take care of standard integrals first
+    code[f"tabulate_tensor_{np_scalar_type}"] = (
+        f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
+    )
 
-      code["tabulate_tensor"] = body
+    code["tabulate_tensor"] = body
 
-      tabulate_tensor_string = ufcx_integrals.factory_tabulate.format(
-          factory_name=factory_name,
-          tabulate_tensor=code["tabulate_tensor"],
-          scalar_type=dtype_to_c_type(options["scalar_type"]),
-          geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
-      )
+    tabulate_tensor_string = ufcx_integrals.factory_tabulate.format(
+        factory_name=factory_name,
+        tabulate_tensor=code["tabulate_tensor"],
+        scalar_type=dtype_to_c_type(options["scalar_type"]),
+        geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
+    )
 
-      implementation_parts.append(tabulate_tensor_string)
+    implementation_parts.append(tabulate_tensor_string)
 
     #Generate code string for runtime integral
     if(len(body_runtime)>0):

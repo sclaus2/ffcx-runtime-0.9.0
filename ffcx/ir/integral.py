@@ -14,7 +14,12 @@ import numpy as np
 import ufl
 from ufl.algorithms.balancing import balance_modifiers
 from ufl.checks import is_cellwise_constant
-from ufl.classes import QuadratureWeight
+from ufl.classes import QuadratureWeight, JacobianDeterminant, Jacobian
+from ufl.algorithms.apply_geometry_lowering import apply_geometry_lowering
+from ufl.compound_expressions import  determinant_expr
+
+from ufl.algorithms.analysis import extract_type
+from ufl.domain import extract_unique_domain
 
 from ffcx.ir.analysis.factorization import compute_argument_factorization
 from ffcx.ir.analysis.graph import build_scalar_graph
@@ -57,11 +62,18 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
     ir["unique_table_types"] = {}
     ir["integrand"] = {}
 
+
     for quadrature_rule, integrand in integrands.items():
         expression = integrand
 
         # Rebalance order of nested terminal modifiers
         expression = balance_modifiers(expression)
+
+        if(quadrature_rule.is_runtime):
+          # Remove determinante of Jacobian for runtime integrals as
+          # they are passed to the tabulate tensor function
+          # together with the weights at runtime
+          expression = remove_detJ(expression)
 
         # Remove QuadratureWeight terminals from expression and replace with 1.0
         expression = replace_quadratureweight(expression)
@@ -379,6 +391,19 @@ def replace_quadratureweight(expression):
     for node in ufl.corealg.traversal.unique_pre_traversal(expression):
         if is_modified_terminal(node) and isinstance(node, QuadratureWeight):
             r.append(node)
+
+    replace_map = {q: 1.0 for q in r}
+    return ufl.algorithms.replace(expression, replace_map)
+
+def remove_detJ(expression):
+    domain = extract_unique_domain(expression)
+    J = Jacobian(domain)
+    detJ = ufl.algebra.Abs(determinant_expr(J))
+
+    r = []
+    for node in ufl.corealg.traversal.unique_pre_traversal(expression):
+      if node.__eq__(detJ):
+          r.append(node)
 
     replace_map = {q: 1.0 for q in r}
     return ufl.algorithms.replace(expression, replace_map)
