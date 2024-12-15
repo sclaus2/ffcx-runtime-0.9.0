@@ -131,6 +131,10 @@ def compute_ir(
     integral_names = {}
     form_names = {}
 
+    # for fd_index, fd in enumerate(analysis.form_data):
+    #   for itg_index, itg_data in enumerate(fd.integral_data):
+    #       print(itg_index, itg_data)
+
     for fd_index, fd in enumerate(analysis.form_data):
         form_names[fd_index] = naming.form_name(fd.original_form, fd_index, prefix)
         for itg_index, itg_data in enumerate(fd.integral_data):
@@ -273,6 +277,8 @@ def _compute_integral_ir(
                   form_data.argument_elements,
                   use_sum_factorization,
                 )
+                wts_tmp = np.full((len(weights)), -1)
+                weights = wts_tmp
             elif scheme == "vertex":
                 # FIXME: Could this come from basix?
 

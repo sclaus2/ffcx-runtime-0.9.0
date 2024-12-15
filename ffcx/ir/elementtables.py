@@ -665,7 +665,9 @@ def extract_finite_element_data(F):
     # element hash and info about derivatives
     for i, v in F.nodes.items():
       tr = v.get("tr")
-      if tr is not None and F.nodes[i]["status"] != "inactive":
+      # print(tr)
+      # print(F.nodes[i]["status"])
+      if tr is not None: #and F.nodes[i]["status"] != "inactive":
         #look up if table reference is in active table names
         mt = v.get("mt")
         res = get_modified_terminal_element(mt)
@@ -680,6 +682,7 @@ def extract_finite_element_data(F):
 
         table_element_reference.append(RuntimeTableData(tr.name,element,element.basix_hash(),deriv_order,basix_idx))
 
+    print("table_element_reference",table_element_reference)
     ###########################################################################
     # From table element reference data collect all necessary information     #
     # about which element components are used in integral and derivative order#
