@@ -206,7 +206,9 @@ def _compute_integral_ir(
         "exterior_facet": "facet",
         "interior_facet": "facet",
         "vertex": "vertex",
-        "custom": "cell"
+        "custom": "cell",
+        "cutcell": "cell",
+        "interface": "facet",
     }
 
     # Iterate over groups of integrals
@@ -248,7 +250,7 @@ def _compute_integral_ir(
         ]
 
         # Compute shape of element tensor
-        if expression_ir["integral_type"] == ("interior_facet"):
+        if expression_ir["integral_type"] == ("interior_facet" or "interface"):
             expression_ir["tensor_shape"] = [2 * dim for dim in argument_dimensions]
         else:
             expression_ir["tensor_shape"] = argument_dimensions
@@ -266,7 +268,7 @@ def _compute_integral_ir(
             if scheme == "custom":
                 points = md["quadrature_points"]
                 weights = md["quadrature_weights"]
-            elif scheme == "runtime":
+            elif itg_data.integral_type == ("cutcell" or "interface"):
                 #use default rule for now
                 #remove this later
                 points, weights, tensor_factors = create_quadrature_points_and_weights(
@@ -364,7 +366,7 @@ def _compute_integral_ir(
             weights = np.asarray(weights)
             rule = QuadratureRule(points, weights, tensor_factors)
 
-            if(scheme=="runtime"):
+            if(scheme=="runtime" or (itg_data.integral_type == ("cutcell" or "inteface"))):
                 # Flag rule as provided at runtime to change integral_ir
                 rule.is_runtime = True
 
@@ -491,7 +493,7 @@ def _compute_form_ir(
     # it has to know their names for codegen phase
     ir["integral_names"] = {}
     ir["subdomain_ids"] = {}
-    ufcx_integral_types = ("cell", "exterior_facet", "interior_facet")
+    ufcx_integral_types = ("cell", "exterior_facet", "interior_facet", "cutcell", "interface")
     ir["subdomain_ids"] = {itg_type: [] for itg_type in ufcx_integral_types}
     ir["integral_names"] = {itg_type: [] for itg_type in ufcx_integral_types}
     for itg_index, itg_data in enumerate(form_data.integral_data):

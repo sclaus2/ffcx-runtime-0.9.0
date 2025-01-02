@@ -69,16 +69,14 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
         # Rebalance order of nested terminal modifiers
         expression = balance_modifiers(expression)
 
-        if(quadrature_rule.is_runtime):
-          # Remove determinante of Jacobian for runtime integrals as
-          # they are passed to the tabulate tensor function
-          # together with the weights at runtime
-          expression = remove_detJ(expression)
+        # if(quadrature_rule.is_runtime):
+        #   # Remove determinante of Jacobian for runtime integrals as
+        #   # they are passed to the tabulate tensor function
+        #   # together with the weights at runtime
+        #   expression = remove_detJ(expression)
 
         # Remove QuadratureWeight terminals from expression and replace with 1.0
         expression = replace_quadratureweight(expression)
-
-        print(expression)
 
         # Build initial scalar list-based graph representation
         S = build_scalar_graph(expression)
@@ -205,8 +203,6 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
           finite_element_hashes, finite_element_deriv_order = extract_finite_element_data(F)
           ir["finite_element_hashes"] = finite_element_hashes
           ir["finite_element_deriv_order"] = finite_element_deriv_order
-          print("finite elements=", ir["finite_element_hashes"])
-          print("finite_element_deriv_order=", ir["finite_element_hashes"])
         else:
           ir["finite_element_hashes"] = []
           ir["finite_element_deriv_order"] = []

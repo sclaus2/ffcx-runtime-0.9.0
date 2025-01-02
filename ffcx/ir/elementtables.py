@@ -682,7 +682,6 @@ def extract_finite_element_data(F):
 
         table_element_reference.append(RuntimeTableData(tr.name,element,element.basix_hash(),deriv_order,basix_idx))
 
-    print("table_element_reference",table_element_reference)
     ###########################################################################
     # From table element reference data collect all necessary information     #
     # about which element components are used in integral and derivative order#

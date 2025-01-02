@@ -48,6 +48,8 @@ extern "C"
     cell = 0,
     exterior_facet = 1,
     interior_facet = 2,
+    cutcell = 3,
+    interface = 4,
   } ufcx_integral_type;
 
   // </HEADER_DECL>
@@ -147,6 +149,40 @@ extern "C"
       const double* restrict FE,
       const size_t* restrict shape);
 
+  #ifndef __STDC_NO_COMPLEX__
+  /// Tabulate integral into tensor A with compiled
+  /// quadrature rule and complex single precision
+  ///
+  /// @see ufcx_tabulate_tensor_single
+  typedef void(ufcx_tabulate_tensor_runtime_complex64)(
+      float _Complex* restrict A, const float _Complex* restrict w,
+      const float _Complex* restrict c, const float* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const int* restrict num_points,
+      const float* restrict points,
+      const float* restrict weights,
+      const float* restrict FE,
+      const size_t* restrict shape);
+#endif // __STDC_NO_COMPLEX__
+
+#ifndef __STDC_NO_COMPLEX__
+  /// Tabulate integral into tensor A with compiled
+  /// quadrature rule and complex double precision
+  ///
+  /// @see ufcx_tabulate_tensor_single
+  typedef void(ufcx_tabulate_tensor_runtime_complex128)(
+      double _Complex* restrict A, const double _Complex* restrict w,
+      const double _Complex* restrict c, const double* restrict coordinate_dofs,
+      const int* restrict entity_local_index,
+      const uint8_t* restrict quadrature_permutation,
+      const int* restrict num_points,
+      const double* restrict points,
+      const double* restrict weights,
+      const double* restrict FE,
+      const size_t* restrict shape);
+#endif // __STDC_NO_COMPLEX__
+
   typedef struct ufcx_integral
   {
     const bool* enabled_coefficients;
@@ -158,6 +194,11 @@ extern "C"
 #endif // __STDC_NO_COMPLEX__
     ufcx_tabulate_tensor_runtime_float32* tabulate_tensor_runtime_float32;
     ufcx_tabulate_tensor_runtime_float64* tabulate_tensor_runtime_float64;
+#ifndef __STDC_NO_COMPLEX__
+    ufcx_tabulate_tensor_complex64* tabulate_tensor_runtime_complex64;
+    ufcx_tabulate_tensor_complex128* tabulate_tensor_runtime_complex128;
+#endif // __STDC_NO_COMPLEX__
+
     bool needs_facet_permutations;
 
     /// Get the hash of the coordinate element associated with the geometry of the mesh.
@@ -190,6 +231,10 @@ extern "C"
 #endif // __STDC_NO_COMPLEX__
     ufcx_tabulate_tensor_runtime_float32* tabulate_tensor_runtime_float32;
     ufcx_tabulate_tensor_runtime_float64* tabulate_tensor_runtime_float64;
+#ifndef __STDC_NO_COMPLEX__
+    ufcx_tabulate_tensor_complex64* tabulate_tensor_runtime_complex64;
+    ufcx_tabulate_tensor_complex128* tabulate_tensor_runtime_complex128;
+#endif // __STDC_NO_COMPLEX__
 
     /// Number of coefficients
     int num_coefficients;
@@ -271,7 +316,7 @@ extern "C"
     /// - r if r + j <= i < r + n
     uint64_t* finite_element_hashes;
 
-    /// List of cell, interior facet and exterior facet integrals and custom integrals
+    /// List of cell, interior facet, exterior facet and custom integrals
     ufcx_integral** form_integrals;
 
     /// IDs for each integral in form_integrals list

@@ -51,8 +51,6 @@ ufcx_integral {factory_name} =
   {tabulate_tensor_float64}
   {tabulate_tensor_complex64}
   {tabulate_tensor_complex128}
-  {tabulate_tensor_runtime_float32}
-  {tabulate_tensor_runtime_float64}
   .needs_facet_permutations = {needs_facet_permutations},
   .coordinate_element_hash = {coordinate_element_hash},
   .num_fe = {num_finite_elements},

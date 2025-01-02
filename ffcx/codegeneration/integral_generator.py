@@ -643,12 +643,14 @@ class IntegralGenerator:
       intermediates += [L.Assign(tbl_id[0][0], prod)]
 
       if num_elements>1:
+        shape_offset_1 = L.Symbol("shape_offset_1", dtype=L.DataType.INT)
         shape_offset = L.Symbol("shape_offset", dtype=L.DataType.INT)
         el = L.Symbol("el", dtype=L.DataType.INT)
 
-        body = [L.VariableDecl(shape_offset,4*(el-1))]
-        body += [L.Assign(tbl_offset[el], shape[shape_offset]*shape[1+shape_offset]
-                          *shape[2+shape_offset]*shape[3+shape_offset] + tbl_offset[el-1])]
+        body = [L.VariableDecl(shape_offset_1,4*(el-1))]
+        body += [L.Assign(tbl_offset[el], shape[shape_offset_1]*shape[1+shape_offset_1]
+                          *shape[2+shape_offset_1]*shape[3+shape_offset_1] + tbl_offset[el-1])]
+        body += [L.VariableDecl(shape_offset,4*(el))]
         body += [L.Assign(tbl_id[el][0],shape[1+shape_offset]*shape[2+shape_offset]*shape[3+shape_offset])]
         body += [L.Assign(tbl_id[el][1],shape[2+shape_offset]*shape[3+shape_offset])]
         body += [L.Assign(tbl_id[el][2],shape[3+shape_offset])]

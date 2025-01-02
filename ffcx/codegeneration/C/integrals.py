@@ -46,92 +46,74 @@ def generator(ir: IntegralIR, options):
 
     assert(num_runtime_rules<2)
 
-    remove_rules = []
-    runtime_part = []
-    body_runtime = []
+    is_runtime = False
 
-    for rule in ir.expression.integrand.keys():
-      if(rule.is_runtime):
-         #generate different parts here
-         runtime_part = ig.generate_runtime(rule)
-         remove_rules.append(rule)
-
-    #Delete all runtime rules from IR to generate code for standard integrals with remainder
-    for rule in remove_rules:
-       ir.expression.integrand.pop(rule)
-
-    if(len(remove_rules)>0):
-      CF = CFormatter(options["scalar_type"])
-      body_runtime = CF.c_format(runtime_part)
-
-    #reinitialize IntegralGenerator for geometric data
-    ig = IntegralGenerator(ir, backend)
+    if(num_runtime_rules>0):
+      is_runtime=True
 
     parts = []
-    body = " "
 
-    #check if there is any standard integral
-    if(len(ir.expression.integrand)>0):
-      # Generate code ast for the tabulate_tensor body
+    if(is_runtime):
+      for rule in ir.expression.integrand.keys():
+        parts = ig.generate_runtime(rule)
+    else:
       parts = ig.generate()
 
-      # Format code as string
-      CF = CFormatter(options["scalar_type"])
-      body = CF.c_format(parts)
+    CF = CFormatter(options["scalar_type"])
+    # Format code as string
+    body = CF.c_format(parts)
 
     # Generate generic FFCx code snippets and add specific parts
     code = {}
     implementation_parts = []
     np_scalar_type = np.dtype(options["scalar_type"]).name
 
-    code["tabulate_tensor_float32"] = ".tabulate_tensor_float32 = NULL,"
-    code["tabulate_tensor_float64"] = ".tabulate_tensor_float64 = NULL,"
-    code["tabulate_tensor_runtime_float32"] = ".tabulate_tensor_runtime_float32 = NULL,"
-    code["tabulate_tensor_runtime_float64"] = ".tabulate_tensor_runtime_float64 = NULL,"
-    if sys.platform.startswith("win32"):
-          code["tabulate_tensor_complex64"] = ""
-          code["tabulate_tensor_complex128"] = ""
+    if(is_runtime):
+        code["tabulate_tensor_float32"] = ".tabulate_tensor_runtime_float32 = NULL,"
+        code["tabulate_tensor_float64"] = ".tabulate_tensor_runtime_float64 = NULL,"
+        code["tabulate_tensor_complex64"] = ".tabulate_tensor_runtime_complex64 = NULL,"
+        code["tabulate_tensor_complex128"] = ".tabulate_tensor_runtime_complex128 = NULL,"
     else:
-          code["tabulate_tensor_complex64"] = ".tabulate_tensor_complex64 = NULL,"
-          code["tabulate_tensor_complex128"] = ".tabulate_tensor_complex128 = NULL,"
+        code["tabulate_tensor_float32"] = ".tabulate_tensor_float32 = NULL,"
+        code["tabulate_tensor_float64"] = ".tabulate_tensor_float64 = NULL,"
+        code["tabulate_tensor_complex64"] = ".tabulate_tensor_complex64 = NULL,"
+        code["tabulate_tensor_complex128"] = ".tabulate_tensor_complex128 = NULL,"
 
-    #Generate code string for standard integral
-    # Note that this might be empty
-    # Take care of standard integrals first
-    code[f"tabulate_tensor_{np_scalar_type}"] = (
-        f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
-    )
+    if sys.platform.startswith("win32"):
+      code["tabulate_tensor_complex64"] = ""
+      code["tabulate_tensor_complex128"] = ""
 
     code["tabulate_tensor"] = body
 
-    tabulate_tensor_string = ufcx_integrals.factory_tabulate.format(
-        factory_name=factory_name,
-        tabulate_tensor=code["tabulate_tensor"],
-        scalar_type=dtype_to_c_type(options["scalar_type"]),
-        geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
-    )
-
-    implementation_parts.append(tabulate_tensor_string)
-
-    #Generate code string for runtime integral
-    if(len(body_runtime)>0):
-      if(np_scalar_type in ("complex64", "complex128")):
-        print("Not implemented for runtime integrals")
-
-      code[f"tabulate_tensor_runtime_{np_scalar_type}"] = (
+    if(is_runtime):
+      code[f"tabulate_tensor_{np_scalar_type}"] = (
           f".tabulate_tensor_runtime_{np_scalar_type} = tabulate_tensor_runtime_{factory_name},"
       )
 
-      code["tabulate_tensor_runtime"] = body_runtime
-
       runtime_tabulate_tensor_string = ufcx_integrals.factory_runtime_tabulate.format(
           factory_name=factory_name,
-          tabulate_tensor_runtime=code["tabulate_tensor_runtime"],
+          tabulate_tensor_runtime=code["tabulate_tensor"],
           scalar_type=dtype_to_c_type(options["scalar_type"]),
           geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
       )
 
       implementation_parts.append(runtime_tabulate_tensor_string)
+    else:
+      #Generate code string for standard integral
+      # Note that this might be empty
+      # Take care of standard integrals first
+      code[f"tabulate_tensor_{np_scalar_type}"] = (
+          f".tabulate_tensor_{np_scalar_type} = tabulate_tensor_{factory_name},"
+      )
+
+      tabulate_tensor_string = ufcx_integrals.factory_tabulate.format(
+          factory_name=factory_name,
+          tabulate_tensor=code["tabulate_tensor"],
+          scalar_type=dtype_to_c_type(options["scalar_type"]),
+          geom_type=dtype_to_c_type(dtype_to_scalar_dtype(options["scalar_type"])),
+      )
+
+      implementation_parts.append(tabulate_tensor_string)
 
     #Generate code string for ufcx integral
     if len(ir.enabled_coefficients) > 0:
@@ -188,8 +170,6 @@ def generator(ir: IntegralIR, options):
         tabulate_tensor_float64=code["tabulate_tensor_float64"],
         tabulate_tensor_complex64=code["tabulate_tensor_complex64"],
         tabulate_tensor_complex128=code["tabulate_tensor_complex128"],
-        tabulate_tensor_runtime_float32=code["tabulate_tensor_runtime_float32"],
-        tabulate_tensor_runtime_float64=code["tabulate_tensor_runtime_float64"],
     )
 
     implementation_parts.append(ufcx_integral_string)
