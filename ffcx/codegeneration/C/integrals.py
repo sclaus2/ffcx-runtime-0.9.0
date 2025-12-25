@@ -134,7 +134,7 @@ def generator(ir: IntegralIR, options):
 
     if num_elements> 0:
       values = ", ".join(
-          f"UINT64_C({0 if el is None else el})" for el in ir.expression.finite_element_hashes
+          f"UINT64_C({el})" for el in ir.expression.finite_element_hashes
       )
       sizes = num_elements
       code["finite_element_hashes_init"] = (

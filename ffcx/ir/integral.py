@@ -200,6 +200,7 @@ def compute_integral_ir(cell, integral_type, entity_type, integrands, argument_s
         if quadrature_rule.is_runtime:
           # build list of active finite elements in integral and their maximum derivatives
           # and correct local finite element numbering in F.nodes[i]["tr"] accordingly
+          # Extract coordinate element from domain
           finite_element_hashes, finite_element_deriv_order = extract_finite_element_data(F)
           ir["finite_element_hashes"] = finite_element_hashes
           ir["finite_element_deriv_order"] = finite_element_deriv_order

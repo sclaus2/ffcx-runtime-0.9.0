@@ -147,7 +147,7 @@ def _analyze_expression(
 
 
 def _analyze_form(
-    form: ufl.form.Form, scalar_type: npt.DTypeLike
+    form: ufl.form.Form, scalar_type: npt.DTypeLike, parameters: dict[str, typing.Any] = {}
 ) -> ufl.algorithms.formdata.FormData:
     """Analyzes UFL form and attaches metadata.
 

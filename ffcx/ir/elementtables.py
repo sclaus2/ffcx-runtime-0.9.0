@@ -555,10 +555,19 @@ def build_optimized_tables(
 
         basix_idx = basix_index(local_derivatives)
         hash = element.basix_hash()  #not basix element get component
+        
+
 
         if hash is None: #not basix element get component
-                #extract component
-                component_element, offset, stride = element.get_component_element(flat_component)
+            #extract component - may need to recurse for VectorElements
+            component_element, offset, stride = element.get_component_element(flat_component)
+            hash = component_element.basix_hash()
+            # Handle _ComponentElement wrapper by accessing basix_element
+            if hash is None and hasattr(component_element, 'basix_element'):
+                hash = component_element.basix_element.basix_hash()
+            # For VectorElement, component may also be a blocked element - extract base
+            while hash is None and hasattr(component_element, 'sub_elements') and len(component_element.sub_elements) > 0:
+                component_element = component_element.sub_elements[0]
                 hash = component_element.basix_hash()
 
         # tables is just np.arrays, mt_tables hold metadata too
@@ -676,11 +685,23 @@ def extract_finite_element_data(F):
         deriv_order = sum(local_derivatives)
         basix_idx = basix_index(local_derivatives)
 
-        if element.basix_hash() is None: #not basix element get component
-          #extract component
-          element, offset, stride = element.get_component_element(flat_component)
+        element_hash = element.basix_hash()
+        if element_hash is None: #not basix element get component
+          #extract component - may need to recurse for VectorElements
+          component_element, offset, stride = element.get_component_element(flat_component)
+          element_hash = component_element.basix_hash()
+          element = component_element
+          # Handle _ComponentElement wrapper by accessing basix_element
+          if element_hash is None and hasattr(element, 'basix_element'):
+              element_hash = element.basix_element.basix_hash()
+          # For VectorElement, component may also be a blocked element - extract base
+          while element_hash is None and hasattr(element, 'sub_elements') and len(element.sub_elements) > 0:
+              element = element.sub_elements[0]
+              element_hash = element.basix_hash()
 
-        table_element_reference.append(RuntimeTableData(tr.name,element,element.basix_hash(),deriv_order,basix_idx))
+        # Only add elements with valid hashes (skip None)
+        if element_hash is not None:
+            table_element_reference.append(RuntimeTableData(tr.name,element,element_hash,deriv_order,basix_idx))
 
     ###########################################################################
     # From table element reference data collect all necessary information     #
@@ -721,6 +742,8 @@ def extract_finite_element_data(F):
     finite_element_deriv_order = []
     for el in finite_element_hashes:
         finite_element_deriv_order.append(finite_element_hash_deriv_order[el])
+    
+
 
     #print("fe_ids=", finite_element_ids)
 
@@ -728,6 +751,8 @@ def extract_finite_element_data(F):
     # Update numbering in tables in graph F                                   #
     ###########################################################################
 
+
+    
     for i, v in F.nodes.items():
       tr = v.get("tr")
       if tr is not None:
